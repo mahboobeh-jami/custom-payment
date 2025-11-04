@@ -18,7 +18,7 @@
     </basis>
     <title>[##cms.seo.title##]</title>
     <link href="[##cms.cms.cdn##]/custom/payment/css/payment.ui.min.css" rel="stylesheet" />
-    
+
 </head>
 
 <body>
@@ -28,46 +28,51 @@
     <main class="layout__body__container">
         <!-- payment section -->
         <div class="payment__container max-w-7xl mx-auto max-xl:mx-5">
-            <div class="payment__content rounded-2xl p-8 bg-gray-50 shadow-lg my-8">
-                <div class="payment__title flex justify-between pb-8 mb-8">
+            <div class="payment-top-content"></div>
+            <div class="payment-layout">
+                <div class="payment__content rounded-2xl p-8 bg-gray-50 shadow-lg my-8">
+                    <div class="payment__title flex justify-between pb-8 mb-8">
 
-                    <div>
-                        <h1 class="text-xl mb-2">درگاه امن پرداخت</h1>
-                        <div class="text-sm">از این درگاه میتوانید مبالغی را که کارشناسان فروش ما به شما اعلام کرده
-                            اند را پرداخت
-                            نمایید </div>
+                        <div>
+                            <h1 class="text-xl mb-2 h1-element">درگاه امن پرداخت</h1>
+                            <div class="text-sm description-element">از این درگاه میتوانید مبالغی را که کارشناسان فروش
+                                ما به
+                                شما اعلام کرده
+                                اند را پرداخت
+                                نمایید </div>
 
+                        </div>
                     </div>
-                </div>
-                <div class="text-sm">
-                    <basis core="schema" run="atclient"
-                        schemaurl="/schema/domainform/[##cms.Host.CustomPaymentId1##]/[##cms.Host.CustomPaymentId2##]/fa/Custom-Payment"
-                        displaymode="new" button="[data-btn-submit]" resultsourceid="edit.data"
-                        OnRendered="schemaRendered">
-                    </basis>
-                    <basis core="api" if="{##cms.submit.run|(false)##}" run="atclient"
-                        url="/schema/domainform/[##cms.Host.CustomPaymentId1##]/fa/editobject" method="post"
-                        body="object_edit={##cms.submit.value##}&captcha={##cms.submit.captcha##}&captchaid={##cms.submit.captchaid##}"
-                        content-type="application/x-www-form-urlencoded" triggers='cms.submit'
-                        OnProcessed="OnProcessedEditObject">
-                    </basis>
-                    <basis core="dbsource" source="trust_login" name="captcha" run="atclient"
-                        triggers="captcha.refresh">
-                        <member name="code" type="scalar" request="captcha"></member>
-                    </basis>
-                    <div data-bc-question="">
-                        <div data-bc-title-container=""><span data-bc-question-title="" data-bc-schema-info-prpid="2582"
-                                data-sys-text="">کد امنیتی</span></div>
-                        <div id="captchaContainer" data-bc-answer-container="" data-bc-schema-info-multi="0"
-                            data-bc-schema-info-word="1052" data-bc-schema-info-part="1"
-                            data-bc-schema-info-part-0-type="text">
+                    <div class="bg-payment-form">
+                        <div class="text-sm">
+                            <basis core="schema" run="atclient"
+                                schemaurl="/schema/domainform/[##cms.Host.CustomPaymentId1##]/[##cms.Host.CustomPaymentId2##]/fa/Custom-Payment"
+                                displaymode="new" button="[data-btn-submit]" resultsourceid="edit.data"
+                                OnRendered="schemaRendered">
+                            </basis>
+                            <basis core="api" if="{##cms.submit.run|(false)##}" run="atclient"
+                                url="/schema/domainform/[##cms.Host.CustomPaymentId1##]/fa/editobject" method="post"
+                                body="object_edit={##cms.submit.value##}&captcha={##cms.submit.captcha##}&captchaid={##cms.submit.captchaid##}"
+                                content-type="application/x-www-form-urlencoded" triggers='cms.submit'
+                                OnProcessed="OnProcessedEditObject">
+                            </basis>
+                            <basis core="dbsource" source="trust_login" name="captcha" run="atclient"
+                                triggers="captcha.refresh">
+                                <member name="code" type="scalar" request="captcha"></member>
+                            </basis>
+                            <div data-bc-question="">
+                                <div data-bc-title-container=""><span data-bc-question-title=""
+                                        data-bc-schema-info-prpid="2582" data-sys-text="">کد امنیتی</span></div>
+                                <div id="captchaContainer" data-bc-answer-container="" data-bc-schema-info-multi="0"
+                                    data-bc-schema-info-word="1052" data-bc-schema-info-part="1"
+                                    data-bc-schema-info-part-0-type="text">
 
-                            <div data-bc-answer-collection="">
-                                <div data-bc-answer="">
-                                    <div data-bc-part-container="">
-                                        <basis datamembername="captcha.code" core="print" run="atclient">
-                                            <face>
-                                                <script type="text/template">
+                                    <div data-bc-answer-collection="">
+                                        <div data-bc-answer="">
+                                            <div data-bc-part-container="">
+                                                <basis datamembername="captcha.code" core="print" run="atclient">
+                                                    <face>
+                                                        <script type="text/template">
                                                         <div data-bc-part-container="" class="w-full">
                                                             <div data-bc-part="" class="captcha" data-bc-part-related-cell="">
                                                               <input type="text" class="contactUsInput" name="captcha" maxlength="4" />
@@ -81,33 +86,38 @@
                                                             </div>
                                                           </div>
                                                     </script>
-                                            </face>
-                                        </basis>
+                                                    </face>
+                                                </basis>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
-
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <button class="data-bc-btn rounded-md cursor-pointer bg-primary p-1 hover:bg-secondary" type="button"
-                    data-btn-submit>
-                    ارسال
-                </button>
-                <basis core="callback" run="atclient" method="submitPayment" triggers="edit.data"></basis>
-                <div class="message__api text-center"></div>
+                        <button class="data-bc-btn rounded-md cursor-pointer bg-primary p-1 hover:bg-secondary"
+                            type="button" data-btn-submit>
+                            ارسال
+                        </button>
+                        <basis core="callback" run="atclient" method="submitPayment" triggers="edit.data"></basis>
+                        <div class="message__api text-center"></div>
+                        <div class="hidden mb-5 loading__api" id="ballsWaveG">
+                            <div id="ballsWaveG_1" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_2" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_3" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_4" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_5" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_6" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_7" class="ballsWaveG"></div>
+                            <div id="ballsWaveG_8" class="ballsWaveG"></div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="payment-another-elements"></div>
             </div>
-            <div class="hidden mb-5 loading__api" id="ballsWaveG">
-                <div id="ballsWaveG_1" class="ballsWaveG"></div>
-                <div id="ballsWaveG_2" class="ballsWaveG"></div>
-                <div id="ballsWaveG_3" class="ballsWaveG"></div>
-                <div id="ballsWaveG_4" class="ballsWaveG"></div>
-                <div id="ballsWaveG_5" class="ballsWaveG"></div>
-                <div id="ballsWaveG_6" class="ballsWaveG"></div>
-                <div id="ballsWaveG_7" class="ballsWaveG"></div>
-                <div id="ballsWaveG_8" class="ballsWaveG"></div>
-            </div>
+            <div class="payment-bottom-content"></div>
         </div>
 
     </main>
