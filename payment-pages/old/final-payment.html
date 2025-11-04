@@ -1,0 +1,1345 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+<style type="text/css">
+    .cms-data-member {
+        display: none
+    }
+
+    <basis core="call" file="Client_Final_Css.inc" />
+</style>
+<script type="text/javascript">
+    <basis core="call" file="Client_Reservation_js.inc" />
+</script>
+<basis core="external.fly.ws" source="cmsDbService2" name="db" procedurename="dbsource">
+    <member method="cms" name="webservice_detail" query='{
+            "name": "db",
+            "mid": "20",
+            "member": [
+                {
+                    "name": "q",
+                    "type": "list",
+                    "request": "webservice_Detail",
+                    "id": [##cms.form.bank_id|("")##],
+                    "dmnid": [##cms.cms.domainid##],
+                    "lid":"1"
+                }
+            ]
+        }' />
+</basis>
+<basis core="group" name="DetailDelay">
+    <basis core="inlinesource" name="db">
+        <member name="bankid" format="json" postsql="select value from [db.bankid] where field = 'bankid'">
+            {"root":[##db.webservice_detail.result##]} </member>
+        <member name="unit" format="json" postsql="select value from [db.unit] where field = 'unit'">
+            {"root":[##db.webservice_detail.result##]} </member>
+        <member name="account" format="json" postsql="select value from [db.account] where field = 'account'">
+            {"root":[##db.webservice_detail.result##]} </member>
+    </basis>
+    <basis core="group" name="PriceDelay1">
+        <basis core="dbsource" source="hosting" name="site">
+            <member name="address" type="list" request="siteaddress" />
+        </basis>
+
+        <div id="bgLoadding-box"></div>
+        <div id="payment-Loadding">
+            <div class="loader2"></div>
+            <div id="text-loading">در حال اتصال به درگاه پرداخت الکترونیک , لطفا چند لحظه
+                صبر کنید ...
+            </div>
+        </div>
+        <basis core="dbsource" source="accounting" name="db" bankid="[##db.bankid.Value##]" unit="[##db.unit.Value##]"
+            factorid="0" price="[##cms.form.price##]" eid="1">
+            <member name="paymentid" type="scalar" request="paymentid" preview="" />
+        </basis>
+        <basis core="group" if="'[##db.paymentid.Column1##]' = 'not ok'">
+            <div id="text-loading">امکان اتصال به درگاه پرداخت الکترونیک وجود ندارد.</div>
+        </basis>
+        <basis core="group" if="'[##db.paymentid.Column1##]' <> 'not ok'">
+            <basis core="group" name="Delay_save_inputs"
+                if="[##cms.form.bank_id##] not in (35,51,55,57,66,69,95,97,98,199)">
+                <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+                    <member name="save_inputs" method="cms" query='{
+                               "name": "db",
+                               "mid": "20",
+                               "member": [
+                                   {
+                                       "request": "save_inputs",
+                                       "id": "[##db.paymentid.Column1##]",
+                                       "account": "[##db.account.Value##]",
+                                       "name": "[##cms.form.name##]",
+                                       "desc": "[##cms.form.desc##]",
+                                       "price": "[##cms.form.price##]",
+                                       "phone": "[##cms.form.phone##]",
+                                       "bank_id": "[##cms.form.bank_id##]",
+                                       "bankid": "[##db.bankid.Value##]",
+                                       "paymentid": "[##db.paymentid.Column1##]"
+                                   }
+                               ]
+                           }' preview="" />
+                </basis>
+                <basis core="group" name="Saman" if="[##cms.form.bank_id##] = 31">
+                    <basis core="inlinesource" name="db">
+                        <member name="merchantID" format="json"
+                            postsql="select value from [db.merchantID] where field = 'merchantid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="saman" name="saman" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="">
+                            <member name="m1" method="RequestToken" sort="random">
+                                <params>
+                                    <param name="MID" value="[##db.merchantID.Value##]" />
+                                    <param name="ResNum" value="[##db.paymentid.Column1##]" />
+                                    <param name="Amount" value="[##cms.form.price##]" />
+                                    <param name="SegAmount1" value="0" />
+                                    <param name="SegAmount2" value="0" />
+                                    <param name="SegAmount3" value="0" />
+                                    <param name="SegAmount4" value="0" />
+                                    <param name="SegAmount5" value="0" />
+                                    <param name="SegAmount6" value="0" />
+                                    <param name="AdditionalData1" value="" />
+                                    <param name="AdditionalData2" value="" />
+                                    <param name="Wage" value="0" />
+                                    <param name="RedirectUrl" value="" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <input type="hidden" value='[##saman.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        callback: "[##site.address.domain##]/callBack/payment",
+                                        bank_id: 31
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Mellat" if="[##cms.form.bank_id##] = 32">
+                    <basis core="inlinesource" name="db">
+                        <member name="terminalid" format="json"
+                            postsql="select value from [db.terminalid] where field = 'terminalid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="username" format="json"
+                            postsql="select value from [db.username] where field = 'username'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="password" format="json"
+                            postsql="select value from [db.password] where field = 'password'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="mellat" name="mellat" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="">
+                            <member name="m1" method="bpPayRequest" sort="random" preview="">
+                                <params>
+                                    <param name="TerminalId" value="[##db.terminalid.Value##]" />
+                                    <param name="userName" value="[##db.username.Value##]" />
+                                    <param name="userPassword" value="[##db.password.Value##]" />
+                                    <param name="orderId" value="[##db.paymentid.Column1##]" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="localDate" value="[##cms.cms.date2##]" />
+                                    <param name="localTime" value="[##cms.cms.time2##]" />
+                                    <param name="additionalData" value="" />
+                                    <param name="callBackUrl" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="payerId" value="0" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="InnerDelay">
+                            <input type="hidden" value='[##mellat.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/'"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        bank_id: 32
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Psargad" if="[##cms.form.bank_id##] = 33">
+                    <basis core="inlinesource" name="db">
+                        <member name="merchantID" format="json"
+                            postsql="select value from [db.merchantID] where field = 'merchantid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="terminalID" format="json"
+                            postsql="select value from [db.terminalID] where field = 'terminalid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="pasargadBank" name="pasargad" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="true">
+                            <member name="m1" method="pasargadGateway" merchantCode="[##db.merchantID.Value##]"
+                                sort="random">
+                                <params>
+                                    <param name="merchantCode" value="[##db.merchantID.Value##]" />
+                                    <param name="terminalCode" value="[##db.terminalID.Value##]" />
+                                    <param name="invoiceNumber" value="[##db.paymentid.Column1##]" />
+                                    <param name="invoiceDate" value="[##cms.cms.date##] [##cms.cms.time##]" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="redirectAddress" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="action" value="1003" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            [##pasargad.m1.result##]
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Pay" if="[##cms.form.bank_id##] = 34">
+                    <basis core="inlinesource" name="db">
+                        <member name="api" format="json" postsql="select value from [db.api] where field = 'api'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="pay" name="pay" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="">
+                            <member name="m1" method="send" sort="random">
+                                <params>
+                                    <param name="api" value="[##db.api.Value##]" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="redirect"
+                                        value="[##site.address.domain##]/callBack/payment?iN=[##db.paymentid.Column1##]" />
+                                    <param name="factorNumber" value="[##db.paymentid.Column1##]" />
+                                    <param name="description" value="" />
+                                </params>
+                            </member>
+                        </basis>
+
+                        <basis core="group" name="InnerDelay">
+                            <input type="hidden" value='[##pay.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/'"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        bank_id: 34
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Asanpardakht" if="[##cms.form.bank_id##] = 38">
+                    <basis core="inlinesource" name="db">
+                        <member name="merchantID" format="json"
+                            postsql="select value from [db.merchantID] where field = 'merchantid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="username" format="json"
+                            postsql="select value from [db.username] where field = 'username'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="password" format="json"
+                            postsql="select value from [db.password] where field = 'password'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="easyPayment" name="asanPardakht" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="">
+                            <member name="m1" method="RequestOperation" sort="random" preview="">
+                                <params>
+                                    <param name="SSLid" value="13" />
+                                    <param name="merchantConfigurationID" value="[##db.merchantID.Value##]" />
+                                    <param name="serviceCode" value="1" />
+                                    <param name="userName" value="[##db.username.Value##]" />
+                                    <param name="password" value="[##db.password.Value##]" />
+                                    <param name="paymentID" value="[##db.paymentid.Column1##]" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="extraInfo" value="extra Information" />
+                                    <param name="callback" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="factorID" value="0" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <input type="hidden" value='[##asanPardakht.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        callback: "[##site.address.domain##]/callBack/payment",
+                                        bank_id: 38
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Sekhavat" if="[##cms.form.bank_id##] = 39">
+                    <basis core="inlinesource" name="db">
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <input type="hidden" value="1" id="action" />
+                        <div class="sectionInfo"></div>
+                        <script type="text/javascript">
+                            $.ajax({
+                                url: "/token/payment",
+                                type: "post",
+                                data: {
+                                    paymentid: "[##db.paymentid.Column1##]",
+
+                                    price: "[##cms.form.price##]",
+                                    agencyid: "[##cms.form.agencyid|(0)##]",
+                                    paytype: "[##cms.form.paytype##]",
+                                    supplier: "[##cms.form.supplier##]",
+                                    action: $("#action").val(),
+                                    callback: "[##site.address.domain##]/callBack/payment",
+                                    bank_id: 39,
+
+                                },
+                                success: function (result) {
+                                    $(".sectionInfo").empty().html(result)
+                                }
+                            });
+                        </script>
+                    </basis>
+                </basis>
+                <basis core="group" name="Gardeshgari" if="[##cms.form.bank_id##] = 50">
+                    <basis core="inlinesource" name="db">
+                        <member name="token" format="json" postsql="select value from [db.token] where field = 'token'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="gardeshPay" name="gardeshPay" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="true">
+                            <member name="m1" method="getToken" sort="random" preview="true">
+                                <params>
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="invoiceNumber" value="[##db.paymentid.Column1##]" />
+                                    <param name="callback" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="token" value="[##db.token.Value##]" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <script type="text/javascript">
+                                var obj = new Object([##gardeshPay.m1.result##])
+                                var obj_1 = obj["gardeshPay_m1"]["answer"]
+                                var obj_2 = JSON.parse(obj_1)
+                                var field_1 = obj_2["data"]["url"] + '/'
+                                var field_2 = obj_2["data"]["token"]
+                                var url_redirect = field_1.concat(field_2);
+                                window.location = url_redirect
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Sepah" if="[##cms.form.bank_id##] = 54">
+                    <basis core="inlinesource" name="db">
+                        <member name="token" format="json" postsql="select value from [db.token] where field = 'token'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="newSepah" name="newsepah" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="true">
+                            <member name="m1" method="SalePaymentRequest" sort="random" preview="true">
+                                <params>
+                                    <param name="LoginAccount" value="[##db.token.Value##]" />
+                                    <param name="Amount" value="[##cms.form.price##]" />
+                                    <param name="OrderId" value="[##db.paymentid.Column1##]" />
+                                    <param name="CallBackUrl" value="[##site.address.domain##]/callBack/payment" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <script type="text/javascript">
+                                var obj = new Object([##newsepah.m1.result##])
+                                var obj_1 = obj["newsepah_m1"]["Token"]
+                                var field_1 = 'https://pec.shaparak.ir/NewIPG/?Token='
+                                var url_redirect = field_1.concat(obj_1);
+                                window.location = url_redirect
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="ArcaPayment" if="[##cms.form.bank_id##] = 59">
+                    <basis core="inlinesource" name="db">
+                        <member name="username" format="json"
+                            postsql="select value from [db.username] where field = 'username'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="password" format="json"
+                            postsql="select value from [db.password] where field = 'password'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="currency" format="json"
+                            postsql="select value from [db.currency] where field = 'currency'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="ArcaPayment" name="ArcaPayment" source="cmsDbService"
+                            procedurename="sbserviceprocedure1">
+                            <member name="m1" method="register" sort="random" preview="true">
+                                <params>
+                                    <param name="orderNumber" value="[##db.paymentid.Column1##]" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="currency" value="[##db.currency.Value##]" />
+                                    <param name="userName" value="[##db.username.Value##]" />
+                                    <param name="password" value="[##db.password.Value##]" />
+                                    <param name="returnUrl"
+                                        value="[##site.address.domain##]/callBack/payment?iN=[##db.paymentid.Column1##]" />
+                                    <param name="factorId" value="0" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <script type="text/javascript">
+                                var obj = new Object([##ArcaPayment.m1.result##])
+                                var obj_1 = obj["ArcaPayment_m1"]["answer"];;
+                                var obj_2 = JSON.parse(obj_1);
+                                if (obj_2.errorCode == 0) {
+                                    var url_redirect = obj_2["formUrl"];
+                                    window.location = url_redirect
+                                } else {
+                                    $("#payment-Loadding,#bgLoadding-box").show();
+                                    $("#text-loading").text(obj_2.errorMessage);
+                                }
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="refah" if="[##cms.form.bank_id##] = 65">
+                    <basis core="inlinesource" name="db">
+                        <member name="terminalid" format="json"
+                            postsql="select value from [db.terminalid] where field = 'terminalid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="refah" name="refah" source="cmsDbService"
+                            procedurename="sbserviceprocedure1">
+                            <member name="m1" method="createToken" sort="random" preview="true">
+                                <params>
+                                    <param name="Action" value="Token" />
+                                    <param name="Amount" value="[##cms.form.price##]" />
+                                    <param name="callBackUrl" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="ResNum" value="[##db.paymentid.Column1##]" />
+                                    <param name="CellNumber" value="" />
+                                    <param name="TerminalId" value="[##db.terminalid.Value##]" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <input type="hidden" value='[##refah.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        bank_id: 65
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="Rayancard" if="[##cms.form.bank_id##] = 73">
+                    <basis core="inlinesource" name="db">
+                        <member name="acceptcode" format="json"
+                            postsql="select value from [db.acceptcode] where field = 'acceptcode'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="password" format="json"
+                            postsql="select value from [db.password] where field = 'password'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                        <member name="bankid" format="json"
+                            postsql="select value from [db.bankid] where field = 'bankid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="rayanCardPayment" name="rayancard" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="true">
+                            <member name="m1" method="token" sort="random">
+                                <params>
+                                    <param name="acceptcode" value="[##db.acceptcode.Value##]" />
+                                    <param name="password" value="[##db.password.Value##]" />
+                                    <param name="orderid" value="[##db.paymentid.Column1##]" />
+                                    <param name="redirect_url" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <input type="hidden" value='[##rayancard.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                var obj = new Object([##rayancard.m1.result##]);
+                                var obj_1 = obj["rayancard_m1"]["url"]
+
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        payment_url: obj_1,
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        bank_id: 73
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="IranKish" if="[##cms.form.bank_id##] = 77">
+                    <basis core="inlinesource" name="db">
+                        <member name="terminalid" format="json"
+                            postsql="select value from [db.terminalid] where field = 'terminalid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="password" format="json"
+                            postsql="select value from [db.password] where field = 'password'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="merchantID" format="json"
+                            postsql="select value from [db.merchantID] where field = 'merchantid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="IranKishPayment" name="irankish" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="true">
+                            <member name="m1" method="token" sort="random">
+                                <params>
+                                    <param name="terminalid" value="[##db.terminalid.Value##]" />
+                                    <param name="password" value="[##db.password.Value##]" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                    <param name="merchantid" value="[##db.merchantID.Value##]" />
+                                    <param name="callbackurl" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="requestid" value="[##db.paymentid.Column1##]" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="InnerDelay">
+                            <input type="hidden" value='[##irankish.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/'"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                var obj = new Object([##irankish.m1.result##]);
+                                var obj_2 = obj["irankish_m1"]["result"]["token"];
+                                var obj_status = obj["irankish_m1"]["status"]
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        token: obj_2,
+                                        status: obj_status,
+                                        action: $("#action").val(),
+                                        bank_id: 77
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+                <basis core="group" name="BasaPayment" if="[##cms.form.bank_id##] = 85">
+                    <basis core="inlinesource" name="db">
+                        <member name="acceptcode" format="json"
+                            postsql="select value from [db.acceptcode] where field = 'acceptcode'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                        <member name="password" format="json"
+                            postsql="select value from [db.password] where field = 'password'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+
+                        <member name="bankid" format="json"
+                            postsql="select value from [db.bankid] where field = 'bankid'">
+                            {"root":[##db.webservice_detail.result##]} </member>
+                    </basis>
+                    <basis core="group" name="bankgroup">
+                        <basis core="external.ws.ws" service="basaPayment" name="basa" source="cmsDbService"
+                            procedurename="sbserviceprocedure1" preview="true">
+                            <member name="m1" method="token" sort="random">
+                                <params>
+                                    <param name="acceptcode" value="[##db.acceptcode.Value##]" />
+                                    <param name="password" value="[##db.password.Value##]" />
+                                    <param name="orderid" value="[##db.paymentid.Column1##]" />
+                                    <param name="redirect_url" value="[##site.address.domain##]/callBack/payment" />
+                                    <param name="amount" value="[##cms.form.price##]" />
+                                </params>
+                            </member>
+                        </basis>
+                        <basis core="group" name="delay4">
+                            <input type="hidden" value='[##basa.m1.result##]' id="json" />
+                            <input type="hidden" value="" id="action" />
+                            <div class="sectionInfo"></div>
+                            <script type="text/javascript">
+                                var str = document.getElementById("json").value;
+                                str = str.replace(/"/g, ' ');
+                                if (str == 'Time Out') {
+                                    document.getElementById("action").value = 0;
+                                } else {
+                                    document.getElementById("action").value = 1;
+                                }
+                                var obj = new Object([##basa.m1.result##]);
+                                var obj_1 = obj["basa_m1"]["url"]
+
+                                $.ajax({
+                                    url: "/token/payment",
+                                    type: "post",
+                                    data: {
+                                        payment_url: obj_1,
+                                        token: $("#json").val(),
+                                        action: $("#action").val(),
+                                        bank_id: 85
+                                    },
+                                    success: function (result) {
+                                        $(".sectionInfo").empty().html(result)
+                                    }
+                                });
+                            </script>
+                        </basis>
+                    </basis>
+                </basis>
+
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 35">
+                <basis core="inlinesource" name="db">
+                    <member name="merchantID" format="json"
+                        postsql="select value from [db.merchantID] where field = 'merchantid'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="zarrinPal" name="zarrinPal" source="cmsDbService"
+                    procedurename="sbserviceprocedure1" preview="true">
+                    <member name="m1" method="PaymentRequest" sort="random" preview="true">
+                        <params>
+                            <param name="MerchantID" value="[##db.merchantID.value##]" />
+                            <param name="Amount" value="[##cms.form.price##]" />
+                            <param name="Description" value="get token for payment" />
+                            <param name="Email" value="" />
+                            <param name="Mobile" value="" />
+                            <param name="CallbackURL" value="[##site.address.domain##]/callBack/payment" />
+                        </params>
+                    </member>
+                </basis>
+                <basis core="group" name="InnerDelay">
+                    <input type="hidden" value='[##zarrinPal.m1.result##]' id="json" />
+                    <input type="hidden" value="" id="action" />
+                    <div class="sectionInfo"></div>
+                    <script type="text/javascript">
+                        var str = document.getElementById("json").value;
+                        var split_str = str.split('/')
+                        str = str.replace(/'"/g, ' ');
+                        if (str == 'Time Out') {
+                            document.getElementById("action").value = 0;
+                        } else {
+                            document.getElementById("action").value = 1;
+                        }
+                        $.ajax({
+                            url: "/token/payment",
+                            type: "post",
+                            data: {
+                                token: $("#json").val(),
+                                action: $("#action").val(),
+                                bank_id: 35,
+                                Authority: split_str[5].replace(/[^\x00-\x7F]/g,
+                                    ""),
+                                paymentid: "[##db.paymentid.Column1##]",
+                                bankid: "[##db.bankid.Value##]",
+                                account: "[##db.account.Value##]",
+                                name: "[##cms.form.name##]",
+                                desc: "[##cms.form.desc##]",
+                                price: "[##cms.form.price##]",
+                                phone: "[##cms.form.phone##]"
+
+
+                            },
+                            success: function (result) {
+                                $(".sectionInfo").empty().html(result)
+                            }
+                        });
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 51">
+                <basis core="inlinesource" name="db">
+                    <member name="token" format="json" postsql="select value from [db.token] where field = 'token'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="kipaaPayment" name="kipaa" source="cmsDbService"
+                    procedurename="sbserviceprocedure1" preview="true">
+                    <member name="m1" method="request_payment_token" sort="random" preview="true">
+                        <params>
+                            <param name="amount" value="[##cms.form.price##]" />
+                            <param name="callback" value="[##site.address.domain##]/callBack/payment" />
+                            <param name="token" value="[##db.token.Value##]" />
+                        </params>
+                    </member>
+                </basis>
+                <basis core="group" name="InnerDelay">
+                    <div class="sectionInfo"></div>
+                    <input type="hidden" value="" id="action" />
+                    <script type="text/javascript">
+                        var obj = new Object([##kipaa.m1.result##])
+                        var obj_1 = obj["kipaa_m1"]["answer"]
+                        var obj_2 = JSON.parse(obj_1)
+                        if (obj_2["Status"] == '200') {
+                            document.getElementById("action").value = 1;
+                        } else {
+                            document.getElementById("action").value = 0;
+                        }
+                        $.ajax({
+                            url: "/token/payment",
+                            type: "post",
+                            data: {
+                                token: obj_2["Content"]["payment_token"],
+                                payment_url: "https://" + obj_2["Content"][
+                                    "payment_url"
+                                ],
+                                action: $("#action").val(),
+                                bank_id: 51,
+                                paymentid: "[##db.paymentid.Column1##]",
+                                bankid: "[##db.bankid.Value##]",
+                                account: "[##db.account.Value##]",
+                                name: "[##cms.form.name##]",
+                                desc: "[##cms.form.desc##]",
+                                price: "[##cms.form.price##]",
+                                phone: "[##cms.form.phone##]"
+
+
+                            },
+                            success: function (result) {
+                                $(".sectionInfo").empty().html(result)
+                            }
+                        });
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 55">
+                <basis core="inlinesource" name="db">
+                    <member name="token" format="json" postsql="select value from [db.token] where field = 'token'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="aghayePardakht" name="aghayePardakht" source="cmsDbService"
+                    procedurename="sbserviceprocedure1">
+                    <member name="m1" method="createToken" sort="random" preview="true">
+                        <params>
+                            <param name="pin" value="[##db.token.Value##]" />
+                            <param name="amount" value="[##cms.form.price##]" />
+                            <param name="callback" value="[##site.address.domain##]/callBack/payment" />
+                            <param name="invoice_id" value="0" />
+                        </params>
+                    </member>
+                </basis>
+
+                <basis core="group" name="InnerDelay">
+                    <div class="sectionInfo"></div>
+                    <input type="hidden" value="1" id="action" />
+                    <script type="text/javascript">
+                        var obj = new Object([##aghayePardakht.m1.result##])
+                        var obj_1 = obj["aghayePardakht_m1"]["url"]
+                        var split_obj_1 = obj_1.split('/')
+                        $.ajax({
+                            url: "/token/payment",
+                            type: "post",
+                            data: {
+                                token: split_obj_1[4],
+                                payment_url: obj_1,
+                                action: $("#action").val(),
+                                bank_id: 55,
+                                paymentid: "[##db.paymentid.Column1##]",
+                                bankid: "[##db.bankid.Value##]",
+                                account: "[##db.account.Value##]",
+                                name: "[##cms.form.name##]",
+                                desc: "[##cms.form.desc##]",
+                                price: "[##cms.form.price##]",
+                                phone: "[##cms.form.phone##]"
+
+
+                            },
+                            success: function (result) {
+                                $(".sectionInfo").empty().html(result)
+                            }
+                        });
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 57">
+                <basis core="inlinesource" name="db">
+                    <member name="username" format="json"
+                        postsql="select value from [db.username] where field = 'username'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="password" format="json"
+                        postsql="select value from [db.password] where field = 'password'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="serviceId" format="json"
+                        postsql="select value from [db.serviceId] where field = 'serviceId'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="ayandeh" name="ayandeh" source="cmsDbService"
+                    procedurename="sbserviceprocedure1">
+                    <member name="m1" method="createToken" sort="random" preview="true">
+                        <params>
+                            <param name="username" value="[##db.username.value##]" />
+                            <param name="password" value="[##db.password.value##]" />
+                            <param name="callBackUrl" value="[##site.address.domain##]/callBack/payment" />
+                            <param name="serviceId" value="[##db.serviceId.value##]" />
+                            <param name="amount" value="[##cms.form.price##]" />
+                            <param name="mobile" value="" />
+                        </params>
+                    </member>
+                </basis>
+                <basis core="group" name="InnerDelay">
+                    <input type="hidden" value='[##ayandeh.m1.result##]' id="json" />
+                    <input type="hidden" value="1" id="action" />
+                    <div class="sectionInfo"></div>
+                    <script type="text/javascript">
+                        $.ajax({
+                            url: "/token/payment",
+                            type: "post",
+                            data: {
+                                token: $("#json").val(),
+                                action: $("#action").val(),
+                                bank_id: 57,
+                                paymentid: "[##db.paymentid.Column1##]",
+                                bankid: "[##db.bankid.Value##]",
+                                account: "[##db.account.Value##]",
+                                name: "[##cms.form.name##]",
+                                desc: "[##cms.form.desc##]",
+                                price: "[##cms.form.price##]",
+                                phone: "[##cms.form.phone##]"
+
+
+                            },
+                            success: function (result) {
+                                $(".sectionInfo").empty().html(result)
+                            }
+                        });
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 66">
+                <basis core="inlinesource" name="db">
+                    <member name="usr" format="json" postsql="select value from [db.usr] where field = 'usr'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="pwd" format="json" postsql="select value from [db.pwd] where field = 'pwd'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="merchantConfigurationId" format="json"
+                        postsql="select value from [db.merchantConfigurationId] where field = 'merchantConfigurationId'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="shahrBank" name="shahr" source="cmsDbService"
+                    procedurename="sbserviceprocedure1">
+                    <member name="m1" method="token" sort="random" preview="true">
+                        <params>
+                            <param name="usr" value="[##db.usr.value##]" />
+                            <param name="pwd" value="[##db.pwd.value##]" />
+                            <param name="merchantConfigurationId" value="[##db.merchantConfigurationId.value##]" />
+                            <param name="localInvoiceId" value="0" />
+                            <param name="amount" value="[##cms.form.price##]" />
+                            <param name="callbackurl" value="[##site.address.domain##]/callBack/payment" />
+                        </params>
+                    </member>
+                </basis>
+                <basis core="group" name="InnerDelay">
+                    <input type="hidden" value="1" id="action" />
+                    <div class="sectionInfo"></div>
+                    <script type="text/javascript">
+                        var obj = new Object([##shahr.m1.result##]);
+                        var obj_1 = obj["shahr_m1"]["url"]
+                        var obj_2 = obj["shahr_m1"]["token"]
+                        $.ajax({
+                            url: "/token/payment",
+                            type: "post",
+                            data: {
+                                token: obj_2,
+                                payment_url: obj_1,
+                                action: $("#action").val(),
+                                bank_id: 66,
+                                paymentid: "[##db.paymentid.Column1##]",
+                                bankid: "[##db.bankid.Value##]",
+                                account: "[##db.account.Value##]",
+                                name: "[##cms.form.name##]",
+                                desc: "[##cms.form.desc##]",
+                                price: "[##cms.form.price##]",
+                                phone: "[##cms.form.phone##]"
+
+
+                            },
+                            success: function (result) {
+                                $(".sectionInfo").empty().html(result)
+                            }
+                        });
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 69">
+                <basis core="inlinesource" name="db">
+                    <member name="username" format="json"
+                        postsql="select value from [db.username] where field = 'username'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="password" format="json"
+                        postsql="select value from [db.password] where field = 'password'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="fadaxPayment" name="fadax" source="cmsDbService"
+                    procedurename="sbserviceprocedure1" preview="true">
+                    <member name="m1" method="token" sort="random">
+                        <params>
+                            <param name="username" value="[##db.username.value##]" />
+                            <param name="password" value="[##db.password.value##]" />
+                            <param name="amount" value="[##cms.form.price##]" />
+                            <param name="phonenumber"
+                                value="[##cms.form._root.account.mobile|cms.form._root.account.Agencymobile##]" />
+                            <param name="title" value="پرداخت اینترنتی" />
+                            <param name="discountAmount" value="0" />
+                            <param name="taxAmount" value="0" />
+                            <param name="returnURL"
+                                value="[##site.address.domain##]/callBack/payment?iN=[##db.paymentid.Column1##]" />
+                        </params>
+                    </member>
+                </basis>
+                <basis core="group" name="InnerDelay">
+                    <input type="hidden" value="1" id="action" />
+                    <div class="sectionInfo"></div>
+                    <script type="text/javascript">
+                        var obj = new Object([##fadax.m1.result##]);
+                        var obj_1 = obj["fadax_m1"]["url"];
+                        var obj_2 = obj["fadax_m1"]["token"];
+                        var obj_1_splited_1 = obj_1.split("paymentToken=");
+                        if (obj_1 == 'none') {
+                            $("#text-loading").text('در حال حاضر امکان اتصال به درگاه بانک وجود ندارد');
+                            $("#text-loading").append('<a style="display: block;margin: 40px auto;color: white;width: fit-content;text-decoration: none;text-align: center;padding: 5px;border: 1px solid #fff;border-radius: 5px;text-align: center;" href="/">بازگشت به صفحه اصلی</a>');
+                        } else {
+                            $.ajax({
+                                url: "/token/payment",
+                                type: "post",
+                                data: {
+                                    token: obj_2,
+                                    payment_url: obj_1,
+                                    payment_Token: obj_1_splited_1[1],
+                                    action: $("#action").val(),
+                                    bank_id: 69,
+                                    paymentid: "[##db.paymentid.Column1##]",
+                                    bankid: "[##db.bankid.Value##]",
+                                    supplier: "[##cms.form.supplier##]",
+                                    price: "[##cms.form.price##]",
+                                    paytype: "[##cms.form.paytype##]",
+                                    agencyid: "[##cms.form.agencyid|(0)##]",
+
+
+                                },
+                                success: function (result) {
+                                    $(".sectionInfo").empty().html(result)
+                                }
+                            });
+                        }
+
+
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 199">
+                <basis core="inlinesource" name="db">
+                    <member name="username" format="json"
+                        postsql="select value from [db.username] where field = 'username'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="password" format="json"
+                        postsql="select value from [db.password] where field = 'password'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="external.ws.ws" service="fadaxMellat" name="fadax" source="cmsDbService"
+                    procedurename="sbserviceprocedure1" preview="true">
+                    <member name="m1" method="token" sort="random">
+                        <params>
+                            <param name="username" value="[##db.username.value##]" />
+                            <param name="password" value="[##db.password.value##]" />
+                            <param name="amount" value="[##cms.form.price##]" />
+                            <param name="phonenumber"
+                                value="[##cms.form._root.account.mobile|cms.form._root.account.Agencymobile##]" />
+                            <param name="title" value="پرداخت اینترنتی" />
+                            <param name="discountAmount" value="0" />
+                            <param name="taxAmount" value="0" />
+                            <param name="returnURL"
+                                value="[##site.address.domain##]/callBack/payment?iN=[##db.paymentid.Column1##]" />
+                        </params>
+                    </member>
+                </basis>
+                <basis core="group" name="InnerDelay">
+                    <input type="hidden" value="1" id="action" />
+                    <div class="sectionInfo"></div>
+                    <script type="text/javascript">
+                        var obj = new Object([##fadax.m1.result##]);
+                        var obj_1 = obj["fadax_m1"]["url"];
+                        var obj_2 = obj["fadax_m1"]["token"];
+                        var obj_1_splited_1 = obj_1.split("paymentToken=");
+                        if (obj_1 == 'none') {
+                            $("#text-loading").text('در حال حاضر امکان اتصال به درگاه بانک وجود ندارد');
+                            $("#text-loading").append('<a style="display: block;margin: 40px auto;color: white;width: fit-content;text-decoration: none;text-align: center;padding: 5px;border: 1px solid #fff;border-radius: 5px;text-align: center;" href="/">بازگشت به صفحه اصلی</a>');
+                        } else {
+                            $.ajax({
+                                url: "/token/payment",
+                                type: "post",
+                                data: {
+                                    token: obj_2,
+                                    payment_url: obj_1,
+                                    payment_Token: obj_1_splited_1[1],
+                                    action: $("#action").val(),
+                                    bank_id: 199,
+                                    paymentid: "[##db.paymentid.Column1##]",
+                                    bankid: "[##db.bankid.Value##]",
+                                    account: "[##db.account.Value##]",
+                                    name: "[##cms.form.name##]",
+                                    desc: "[##cms.form.desc##]",
+                                    price: "[##cms.form.price##]",
+                                    phone: "[##cms.form.phone##]",
+
+
+
+                                },
+                                success: function (result) {
+                                    $(".sectionInfo").empty().html(result)
+                                }
+                            });
+                        }
+
+
+                    </script>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 95">
+                <basis core="inlinesource" name="db">
+                    <member name="username" format="json"
+                        postsql="select value from [db.username] where field = 'username'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="password" format="json"
+                        postsql="select value from [db.password] where field = 'password'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="terminalid" format="json"
+                        postsql="select value from [db.terminalid] where field = 'terminalid'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="group" name="bankgroup">
+                    <basis core="external.ws.ws" service="pasargad2" name="pasargad" source="cmsDbService"
+                        procedurename="sbserviceprocedure1" preview="true">
+                        <member name="m1" method="token" sort="random" preview="true">
+                            <params>
+                                <param name="paymentid" value="[##db.paymentid.Column1##]" />
+                                <param name="amount" value="[##cms.form.price##]" />
+                                <param name="username" value="[##db.username.Value##]" />
+                                <param name="password" value="[##db.password.Value##]" />
+                                <param name="callback" value="[##site.address.domain##]/callBack/payment" />
+                                <param name="terminalid" value="[##db.terminalid.Value##]" />
+                                <param name="mobile"
+                                    value="[##cms.form._root.account.mobile|cms.form._root.account.Agencymobile##]" />
+                                <param name="dmnid" value="[##cms.cms.domainid##]" />
+                            </params>
+                        </member>
+                    </basis>
+                    <basis core="inlinesource" name="db"></basis>
+                    <basis core="group" name="delay4">
+                        <input type="hidden" value='[##pasargad.m1.result##]' id="json" />
+                        <input type="hidden" value="" id="action" />
+                        <div class="sectionInfo"></div>
+                        <script type="text/javascript">
+                            var str = document.getElementById("json").value;
+                            str = str.replace(/"/g, ' ');
+                            if (str == 'Time Out') {
+                                document.getElementById("action").value = 0;
+                            } else {
+                                document.getElementById("action").value = 1;
+                            }
+                            var obj = new Object([##pasargad.m1.result##]);
+                            var obj_1 = obj["pasargad_m1"]["data"]["url"]
+                            var obj_2 = obj["pasargad_m1"]["data"]["urlId"]
+                            $.ajax({
+                                url: "/token/payment",
+                                type: "post",
+                                data: {
+                                    paymentid: "[##db.paymentid.Column1##]",
+                                    bankid: "[##db.bankid.Value##]",
+                                    account: "[##db.account.Value##]",
+                                    name: "[##cms.form.name##]",
+                                    desc: "[##cms.form.desc##]",
+                                    price: "[##cms.form.price##]",
+                                    phone: "[##cms.form.phone##]",
+
+                                    payment_url: obj_1,
+                                    urlId: obj_2,
+                                    token: $("#json").val(),
+                                    action: $("#action").val(),
+                                    bank_id: 95
+                                },
+                                success: function (result) {
+                                    $(".sectionInfo").empty().html(result)
+                                }
+                            });
+                        </script>
+                    </basis>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 97">
+                <basis core="inlinesource" name="db">
+                    <member name="username" format="json"
+                        postsql="select value from [db.username] where field = 'username'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="password" format="json"
+                        postsql="select value from [db.password] where field = 'password'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="merchant" format="json"
+                        postsql="select value from [db.merchant] where field = 'merchant'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="group" name="bankgroup">
+                    <basis core="external.ws.ws" service="siBank" name="si" source="cmsDbService"
+                        procedurename="sbserviceprocedure1" preview="true">
+                        <member name="m1" method="token" sort="random">
+                            <params>
+                                <param name="merchant" value="[##db.merchant.Value##]" />
+                                <param name="username" value="[##db.username.Value##]" />
+                                <param name="password" value="[##db.password.Value##]" />
+                                <param name="amount" value="[##cms.form.price##]" />
+                                <param name="return_url"
+                                    value="[##site.address.domain##]/callBack/payment?iN=[##db.paymentid.Column1##]" />
+                                <param name="national_code" value="[##cms.form.nationalCodeSiBank##]" />
+                                <param name="mobile" value="[##cms.form.mobileSiBank##]" />
+                                <param name="paymentid" value="[##db.paymentid.Column1##]" />
+                            </params>
+                        </member>
+                    </basis>
+                    <basis core="group" name="delay4">
+                        <input type="hidden" value='[##si.m1.result##]' id="json" />
+                        <input type="hidden" value="" id="action" />
+                        <div class="sectionInfo"></div>
+                        <script type="text/javascript">
+                            var str = document.getElementById("json").value;
+                            str = str.replace(/"/g, ' ');
+                            if (str == 'Time Out') {
+                                document.getElementById("action").value = 0;
+                            } else {
+                                document.getElementById("action").value = 1;
+                            }
+                            $.ajax({
+                                url: "/token/payment",
+                                type: "post",
+                                data: {
+                                    paymentid: "[##db.paymentid.Column1##]",
+                                    bankid: "[##db.bankid.Value##]",
+                                    account: "[##db.account.Value##]",
+                                    name: "[##cms.form.name##]",
+                                    desc: "[##cms.form.desc##]",
+                                    price: "[##cms.form.price##]",
+                                    phone: "[##cms.form.phone##]",
+
+                                    token: $("#json").val(),
+                                    action: $("#action").val(),
+
+                                    bank_id: 97
+                                },
+                                success: function (result) {
+                                    $(".sectionInfo").empty().html(result)
+                                }
+                            });
+                        </script>
+                    </basis>
+                </basis>
+            </basis>
+            <basis core="group" name="Delay_save_inputs" if="[##cms.form.bank_id##] = 98">
+                <basis core="inlinesource" name="db">
+                    <member name="username" format="json"
+                        postsql="select value from [db.username] where field = 'username'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="password" format="json"
+                        postsql="select value from [db.password] where field = 'password'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="callback" format="json"
+                        postsql="select value from [db.callback] where field = 'callback'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="client_id" format="json"
+                        postsql="select value from [db.client_id] where field = 'client_id'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                    <member name="secret" format="json" postsql="select value from [db.secret] where field = 'secret'">
+                        {"root":[##db.webservice_detail.result##]} </member>
+                </basis>
+                <basis core="group" name="bankgroup">
+                    <basis core="external.ws.ws" service="snapPayment" name="snap" source="cmsDbService"
+                        procedurename="sbserviceprocedure1" preview="true">
+                        <member name="m1" method="token" sort="random">
+                            <params>
+                                <param name="client_id" value="[##db.client_id.Value##]" />
+                                <param name="secret" value="[##db.secret.Value##]" />
+                                <param name="username" value="[##db.username.Value##]" />
+                                <param name="password" value="[##db.password.Value##]" />
+                                <param name="amount" value="[##cms.form.price##]" />
+                                <param name="return_url" value="[##site.address.domain##]/callBack/payment" />
+                                <param name="transection_uniq_id" value="[##db.paymentid.Column1##]" />
+                                <param name="cart_id" value="[##db.paymentid.Column1##]" />
+                                <param name="title" value="پرداخت اینترنتی" />
+                                <param name="discount_amount" value="" />
+                            </params>
+                        </member>
+                    </basis>
+                    <basis core="inlinesource" name="db"></basis>
+                    <basis core="group" name="delay4">
+                        <input type="hidden" value='[##snap.m1.result##]' id="json" />
+                        <input type="hidden" value="" id="action" />
+                        <div class="sectionInfo"></div>
+                        <script type="text/javascript">
+                            var str = document.getElementById("json").value;
+                            str = str.replace(/"/g, ' ');
+                            if (str == 'Time Out') {
+                                document.getElementById("action").value = 0;
+                            } else {
+                                document.getElementById("action").value = 1;
+                            }
+                            var obj = new Object([##snap.m1.result##]);
+                            var paymentToken = obj["snap_m1"]["response"]["paymentToken"]
+                            var authentication = obj["snap_m1"]["authentication"]
+                            var paymentPageUrl = obj["snap_m1"]["response"]["paymentPageUrl"]
+                            $.ajax({
+                                url: "/token/payment",
+                                type: "post",
+                                data: {
+                                    paymentid: "[##db.paymentid.Column1##]",
+                                    bankid: "28",
+                                    account: "[##db.account.Value##]",
+                                    name: "[##cms.form.name##]",
+                                    desc: "[##cms.form.desc##]",
+                                    price: "[##cms.form.price##]",
+                                    phone: "[##cms.form.phone##]",
+                                    paymentToken: paymentToken,
+                                    authentication: authentication,
+                                    paymentPageUrl: paymentPageUrl,
+                                    token: $("#json").val(),
+                                    action: $("#action").val(),
+                                    bank_id: 98
+                                },
+                                success: function (result) {
+                                    $(".sectionInfo").empty().html(result)
+                                }
+                            });
+                        </script>
+                    </basis>
+                </basis>
+            </basis>
+        </basis>
+    </basis>
+</basis>
