@@ -1,0 +1,537 @@
+<basis core="group" if="'[##cms.form.action##]' = '0'">
+    <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+    <input value="صفحه اصلی" onclick="window.location='/'" class="redirectHome" type="button">
+</basis>
+<basis core="group" if="'[##cms.form.action##]' = '1'">
+    <basis core="group" name="Saman" if="[##cms.form.bank_id##] = 31">
+        <basis core="inlinesource" name="db">
+            <member name="token" format="json" preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <form method="post" name="PostToken" action="https://sep.shaparak.ir/payment.aspx" class="PostToken">
+            <basis core="print" datamembername="db.token">
+                <face filter="field='answer'">
+                    <input type="hidden" name="Token" value="@value" />
+                </face>
+            </basis>
+            <input type="hidden" name="RedirectURL" value="[##cms.form.callback##]">
+            <!--<input type="submit" value="submit"/>-->
+        </form>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $(".PostToken").submit();
+            });
+        </script>
+    </basis>
+    <basis core="group" name="Mellat" if="[##cms.form.bank_id##] = 32">
+        <basis core="inlinesource" name="db">
+            <member name="token" format="json" preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <form method="post" name="PostToken" action="https://bpm.shaparak.ir/pgwchannel/startpay.mellat"
+            class="PostToken">
+            <basis core="print" datamembername="db.token">
+                <face filter="field='answer'">
+                    <input type="hidden" name="RefId" value="@value" id="RefId" />
+                </face>
+            </basis>
+            <!-- <input type="submit" value="submit"/>-->
+        </form>
+        <script type="text/javascript">
+            var sp = (document.getElementById('RefId').value).split(',');
+            var m = sp[1];
+            document.getElementById('RefId').value = m;
+            $(document).ready(function () {
+                $(".PostToken").submit();
+            });
+        </script>
+    </basis>
+    <basis core="group" name="Psargad" if="[##cms.form.bank_id##] = 33">
+        <!-- pasargad -->
+    </basis>
+    <basis core="group" name="Pay" if="[##cms.form.bank_id##] = 34">
+        <basis core="inlinesource" name="db">
+            <member name="Status" format="json" preview=""
+                postsql="select value from [db.Status] where field = 'Status'">{"root":[##cms.form.token##]}</member>
+            <member name="token" format="json" preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' = '200'">
+            <script type="text/javascript">
+                var obj = [##cms.form.token##];
+                window.location = obj.pay_m1.Value;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' <> '200'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="zarrinpal" if="[##cms.form.bank_id##] = 35">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_zarinpal" method="cms" query='{
+                "name": "db",
+                "mid": "20",
+                "member": [
+                    {
+                        "request": "save_inputs",
+                        "id": "[##cms.form.Authority##]",
+                        "account": "[##cms.form.account##]",
+                        "name": "[##cms.form.name##]",
+                        "desc": "[##cms.form.desc##]",
+                        "price": "[##cms.form.price##]",
+                        "phone": "[##cms.form.phone##]",
+                        "bank_id": "[##cms.form.bank_id##]",
+                        "bankid": "[##cms.form.bankid##]",
+                        "paymentid": "[##cms.form.paymentid##]",
+                       
+                    }
+                ]
+            }' preview="" />
+        </basis>
+        <basis core="inlinesource" name="db">
+            <member name="Status" format="json" preview=""
+                postsql="select value from [db.Status] where field = 'Status'">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' = '100'">
+            <script type="text/javascript">
+                var obj = [##cms.form.token##];
+                window.location = obj.zarrinPal_m1.Value;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' <> '100'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="Asanpardakht" if="[##cms.form.bank_id##] = 38">
+        <basis core="inlinesource" name="db">
+            <member name="token" format="json" preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <form method="post" name="PostToken" action="https://asan.shaparak.ir" class="PostToken">
+            <basis core="print" datamembername="db.token">
+                <face filter="field='answer'">
+                    <input type="hidden" name="RefId" value="@value" id="RefId" />
+                </face>
+            </basis>
+            <input type="hidden" name="RedirectURL" value="[##cms.form.callback##]">
+            <!--  <input type="submit" value="submit"/> -->
+        </form>
+        <script type="text/javascript">
+            var sp = (document.getElementById('RefId').value).split(',');
+            var m = sp[1];
+            document.getElementById('RefId').value = m;
+            $(document).ready(function () {
+                $(".PostToken").submit();
+            });
+        </script>
+    </basis>
+    <basis core="group" name="Sekhavat" if="[##cms.form.bank_id##] = 39">
+        <form method="post" name="PostToken" action="sekhavat-card.bc" class="PostToken">
+            <input type="hidden" name="paymentid" value="[##cms.form.paymentid##]" />
+            <input type="hidden" name="reference" value="[##cms.form.factorid##]" />
+            <input type="hidden" name="totalfinal" value="[##cms.form.totalfinal##]" />
+            <input type="hidden" name="RedirectURL" value="[##cms.form.callback##]" />
+            <input type="hidden" name="agencyid" value="[##cms.form.agencyid##]" />
+            <input type="hidden" name="supplier" value="[##cms.form.supplier##]" />
+            <input type="hidden" name="paytype" value="[##cms.form.paytype##]" />
+            <!--<input type="submit" value="submit"/>-->
+        </form>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $(".PostToken").submit();
+            });
+        </script>
+    </basis>
+    <basis core="group" name="kipaa" if="[##cms.form.bank_id##] = 51">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_kipaa" method="cms" query='{
+                "name": "db",
+                "mid": "20",
+                "member": [
+                    {
+                        "request": "save_inputs",
+                        "id": "[##cms.form.token##]",
+                        "account": "[##cms.form.account##]",
+                        "name": "[##cms.form.name##]",
+                        "desc": "[##cms.form.desc##]",
+                        "price": "[##cms.form.price##]",
+                        "phone": "[##cms.form.phone##]",
+                        "bank_id": "[##cms.form.bank_id##]",
+                        "bankid": "[##cms.form.bankid##]",
+                        "paymentid": "[##cms.form.paymentid##]",
+                       
+                    }
+                ]
+            }' preview="" />
+        </basis>
+        <form method="post" name="PostToken" action="[##cms.form.payment_url##]" class="PostToken">
+            <input type="hidden" name="payment_token" value="[##cms.form.token##]" />
+            <!-- <input type="submit" value="submit"/> -->
+        </form>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $(".PostToken").submit();
+            });
+        </script>
+    </basis>
+    <basis core="group" name="aghayePardakht" if="[##cms.form.bank_id##] = 55">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_kipaa" method="cms" query='{
+                "name": "db",
+                "mid": "20",
+                "member": [
+                    {
+                        "request": "save_inputs",
+                        "id": "[##cms.form.token##]",
+                        "account": "[##cms.form.account##]",
+                        "name": "[##cms.form.name##]",
+                        "desc": "[##cms.form.desc##]",
+                        "price": "[##cms.form.price##]",
+                        "phone": "[##cms.form.phone##]",
+                        "bank_id": "[##cms.form.bank_id##]",
+                        "bankid": "[##cms.form.bankid##]",
+                        "paymentid": "[##cms.form.paymentid##]",
+                       
+                        
+                    }
+                ]
+            }' preview="" />
+        </basis>
+        <script type="text/javascript">
+            var payment_url = '[##cms.form.payment_url##]'
+            window.location = payment_url
+        </script>
+    </basis>
+    <basis core="group" name="ayandeh" if="[##cms.form.bank_id##] = 57">
+        <basis core="inlinesource" name="db">
+            <member name="traceNumber" format="json"
+                postsql="select value from [db.traceNumber] where field = 'traceNumber'" preview="">
+                {"root":[##cms.form.token##]}</member>
+            <member name="result" format="json" postsql="select value from [db.result] where field = 'result'"
+                preview="">{"root":[##cms.form.token##]}</member>
+            <member name="username" format="json" postsql="select value from [db.username] where field = 'username'"
+                preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" name="check-result" if="'[##db.result.value##]' = '0'">
+            <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+                <member name="save_inputs_ayandeh" method="cms" query='{
+                    "name": "db",
+                    "mid": "20",
+                    "member": [
+                        {
+                            "request": "save_inputs",
+                            "id": "[##db.traceNumber.value##]",
+                            "account": "[##cms.form.account##]",
+                            "name": "[##cms.form.name##]",
+                            "desc": "[##cms.form.desc##]",
+                            "price": "[##cms.form.price##]",
+                            "phone": "[##cms.form.phone##]",
+                            "bank_id": "[##cms.form.bank_id##]",
+                            "bankid": "[##cms.form.bankid##]",
+                            "paymentid": "[##cms.form.paymentid##]",
+                           
+                        }
+                    ]
+                }' preview="" />
+            </basis>
+            <form method="post" class="PostToken" action="https://pf.efarda.ir/pf/api/ipg/purchase">
+                <input name="username" type="hidden" value="[##db.username.value##]" />
+                <input name="traceNumber" type="hidden" value="[##db.traceNumber.value##]" />
+                <!-- <input type="submit" name="submit" value="submit" /> -->
+            </form>
+            <script type="text/javascript">
+                $(document).ready(function () {
+                    $(".PostToken").submit();
+                });
+            </script>
+        </basis>
+        <basis core="group" name="check-result" if="'[##db.result.value##]' <> '0'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="refah" if="[##cms.form.bank_id##] = 65">
+        <basis core="inlinesource" name="db">
+            <member name="status" format="json" postsql="select value from [db.status] where field = 'status'">
+                {"root":[##cms.form.token##]}</member>
+            <member name="token" format="json" postsql="select value from [db.token] where field = 'token'">
+                {"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" if="'[##db.status.value##]' = 'true'">
+            <form method="post" name="PostToken" action="https://sep.shaparak.ir/OnlinePG/OnlinePG" class="PostToken">
+                <input type="hidden" name="Token" value="[##db.token.value##]" />
+                <input type="hidden" name="GetMethod" value="true" />
+                <!--<input type="submit" value="submit"/>-->
+            </form>
+            <script type="text/javascript">
+                $(document).ready(function () {
+                    $(".PostToken").submit();
+                });
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.status.value##]' <> 'true'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+
+    </basis>
+    <basis core="group" name="shahr" if="[##cms.form.bank_id##] = 66">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_shahr" method="cms" query='{
+                    "name": "db",
+                    "mid": "20",
+                    "member": [
+                        {
+                            "request": "save_inputs",
+                            "id": "",
+                            "account": "[##cms.form.account##]",
+                            "name": "[##cms.form.name##]",
+                            "desc": "[##cms.form.desc##]",
+                            "price": "[##cms.form.price##]",
+                            "phone": "[##cms.form.phone##]",
+                            "bank_id": "[##cms.form.bank_id##]",
+                            "bankid": "[##cms.form.bankid##]",
+                            "paymentid": "[##cms.form.paymentid##]",
+                           
+                        }
+                    ]
+                }' preview="" />
+        </basis>
+        <form method="post" class="PostToken" action="[##cms.form.payment_url##]">
+            <input name="RefId" type="hidden" value="[##cms.form.token##]" />
+            <!-- <input type="submit" name="submit" value="submit" /> -->
+        </form>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $(".PostToken").submit();
+            });
+        </script>
+
+
+    </basis>
+    <basis core="group" name="fadax" if="[##cms.form.bank_id##] = 69">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_fadax" method="cms" query='{
+                    "name": "db",
+                    "mid": "20",
+                    "member": [
+                        {
+                            "request": "save_inputs",
+                            "id": "[##cms.form.paymentid##]",
+                            "account": "[##cms.form.account##]",
+                            "name": "[##cms.form.name##]",
+                            "desc": "[##cms.form.desc##]",
+                            "price": "[##cms.form.price##]",
+                            "phone": "[##cms.form.phone##]",
+                            "bank_id": "[##cms.form.bank_id##]",
+                            "bankid": "[##cms.form.bankid##]",
+                            "paymentid": "[##cms.form.paymentid##]",
+    
+                            "paymentToken": "[##cms.form.payment_token##]",
+                            "token_jwt": "[##cms.form.token##]"
+                        }
+                    ]
+                }' preview="" />
+        </basis>
+        <script type="text/javascript">
+            var payment_url = '[##cms.form.payment_url##]'
+            window.location = payment_url
+        </script>
+
+    </basis>
+    <basis core="group" name="fadaxMellat" if="[##cms.form.bank_id##] = 199">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_fadaxMellat" method="cms" query='{
+                        "name": "db",
+                        "mid": "20",
+                        "member": [
+                            {
+                                "request": "save_inputs",
+                                "id": "[##cms.form.paymentid##]",
+                                "account": "[##cms.form.account##]",
+                        "name": "[##cms.form.name##]",
+                        "desc": "[##cms.form.desc##]",
+                        "price": "[##cms.form.price##]",
+                        "phone": "[##cms.form.phone##]",
+                                "bank_id": "[##cms.form.bank_id##]",
+                                "bankid": "[##cms.form.bankid##]",
+                                "paymentid": "[##cms.form.paymentid##]",
+        
+                                "paymentToken": "[##cms.form.payment_token##]",
+                                "token_jwt": "[##cms.form.token##]"
+                            }
+                        ]
+                    }' preview="" />
+        </basis>
+        <script type="text/javascript">
+            var payment_url = '[##cms.form.payment_url##]'
+            window.location = payment_url
+        </script>
+
+    </basis>
+    <basis core="group" name="rayancard" if="[##cms.form.bank_id##] = 73">
+        <basis core="inlinesource" name="db">
+            <member name="Status" format="json" preview=""
+                postsql="select value from [db.Status] where field = 'status'">{"root":[##cms.form.token##]}</member>
+            <member name="url" format="json" preview="" postsql="select value from [db.url] where field = 'url'">
+                {"root":[##cms.form.token##]}</member>
+            <member name="token" format="json" preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' = '0'">
+            <script type="text/javascript">
+                var payment_url = '[##cms.form.payment_url##]'
+                window.location = payment_url;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' <> '0'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="IranKish" if="[##cms.form.bank_id##] =77">
+        <basis core="group" if="'[##cms.form.status##]' = 'true'">
+            <form method="post" name="PostToken" action="https://ikc.shaparak.ir/iuiv3/IPG/Index/" class="PostToken">
+                <input type="hidden" name="tokenIdentity" value="[##cms.form.token##]" />
+            </form>
+            <script type="text/javascript">
+                $(document).ready(function () {
+                    $(".PostToken").submit();
+                });
+            </script>
+        </basis>
+        <basis core="group" if="'[##cms.form.status##]' <> 'true'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="basaPayment" if="[##cms.form.bank_id##] = 85">
+        <basis core="inlinesource" name="db">
+            <member name="Status" format="json" preview=""
+                postsql="select value from [db.Status] where field = 'status'">{"root":[##cms.form.token##]}</member>
+            <member name="url" format="json" preview="" postsql="select value from [db.url] where field = 'url'">
+                {"root":[##cms.form.token##]}</member>
+            <member name="token" format="json" preview="">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' = '0'">
+            <script type="text/javascript">
+                var payment_url = '[##cms.form.payment_url##]'
+                window.location = payment_url;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' <> '0'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="PasargadPayment2" if="[##cms.form.bank_id##] = 95">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_pasargad" method="cms" query='{
+                "name": "db",
+                "mid": "20",
+                "member": [
+                    {
+                        "request": "save_inputs",
+                        "id": "[##cms.form.paymentid##]",
+                        "account": "[##cms.form.account##]",
+                        "name": "[##cms.form.name##]",
+                        "desc": "[##cms.form.desc##]",
+                        "price": "[##cms.form.price##]",
+                        "phone": "[##cms.form.phone##]",
+                        "bank_id": "[##cms.form.bank_id##]",
+                        "bankid": "[##cms.form.bankid##]",
+                        "paymentid": "[##cms.form.paymentid##]",
+
+                        "urlId": "[##cms.form.urlId##]"
+                    }
+                ]
+            }' preview="" />
+        </basis>
+        <basis core="inlinesource" name="db">
+            <member name="Status" format="json" preview=""
+                postsql="select value from [db.Status] where field = 'resultMsg'">{"root":[##cms.form.token##]}</member>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' = 'Successful'">
+            <script type="text/javascript">
+                var payment_url = '[##cms.form.payment_url##]'
+                window.location = payment_url;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' <> 'Successful'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="siBank" if="[##cms.form.bank_id##] = 97">
+        <basis core="inlinesource" name="db">
+            <member name="url" format="json" preview="" postsql="select value from [db.url] where field = 'url'">
+                {"root":[##cms.form.token##]}</member>
+            <member name="status" format="json" preview=""
+                postsql="select value from [db.status] where field = 'status'">
+                {"root":[##cms.form.token##]}</member>
+            <member name="transaction_id" format="json" preview=""
+                postsql="select value from [db.transaction_id] where field = 'transaction_id'">
+                {"root":[##cms.form.token##]}
+            </member>
+
+        </basis>
+        <basis core="group" if="'[##db.status.value##]' = 'true'">
+            <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+                <member name="save_inputs_siBank" method="cms" query='{
+                    "name": "db",
+                    "mid": "20",
+                    "member": [
+                        {
+                            "request": "save_inputs",
+                            "id": "[##cms.form.paymentid##]",
+                            "account": "[##cms.form.account##]",
+                            "name": "[##cms.form.name##]",
+                            "desc": "[##cms.form.desc##]",
+                            "price": "[##cms.form.price##]",
+                            "phone": "[##cms.form.phone##]",
+                            "bank_id": "[##cms.form.bank_id##]",
+                            "bankid": "[##cms.form.bankid##]",
+                            "paymentid": "[##cms.form.paymentid##]",
+                            "transaction_id": "[##db.transaction_id.value##]"
+                        }
+                    ]
+                }' preview="" />
+            </basis>
+            <script type="text/javascript">
+                var payment_url = '[##db.url.value##]'
+                window.location = payment_url;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.status.value##]' <> 'true'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+    <basis core="group" name="snapPayment" if="[##cms.form.bank_id##] = 98">
+        <basis core="external.fly.ws" source="cmsDbService2" procedurename="dbsource" name="db">
+            <member name="save_inputs_snapPayment" method="cms" query='{
+                "name": "db",
+                "mid": "20",
+                "member": [
+                    {
+                        "request": "save_inputs",
+                        "id": "[##cms.form.paymentid##]",
+                        "account": "[##cms.form.account##]",
+                        "name": "[##cms.form.name##]",
+                        "desc": "[##cms.form.desc##]",
+                        "price": "[##cms.form.price##]",
+                        "phone": "[##cms.form.phone##]",
+                        "bank_id": "[##cms.form.bank_id##]",
+                        "bankid": "[##cms.form.bankid##]",
+                        "paymentid": "[##cms.form.paymentid##]",
+
+                        "paymentToken": "[##cms.form.paymentToken##]",
+                        "authentication": "[##cms.form.authentication##]"
+                    }
+                ]
+            }' preview="" />
+        </basis>
+        <basis core="inlinesource" name="db">
+            <member name="Status" format="json" preview=""
+                postsql="select value from [db.Status] where field = 'successful'">{"root":[##cms.form.token##]}
+            </member>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' = 'true'">
+            <script type="text/javascript">
+                var paymentPageUrl = '[##cms.form.paymentPageUrl##]'
+                window.location = paymentPageUrl;
+            </script>
+        </basis>
+        <basis core="group" if="'[##db.Status.value##]' <> 'true'">
+            <div id="text-loading">در حال حاضر امکان اتصال به درگاه بانک وجود ندارد.</div>
+        </basis>
+    </basis>
+</basis>

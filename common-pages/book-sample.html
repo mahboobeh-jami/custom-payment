@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+        <link href="https://www.malekair.ir/booking/css/book.ui.min.css?ver=[##cms.cms.date2##][##cms.cms.time2##]"
+rel="stylesheet" />
+</head>
+<body>
+    
+
+
+
+
+
+
+
+
+
+
+    <div class="booking-card">
+    <div class="card-header">
+        <h2 class="booking-title">
+            <!-- ترجمه عنوان کارت -->
+            <span id="bookingTitle"> {{ translate('booking_title') }} </span>
+        </h2>
+    </div>
+
+    <div class="card-body">
+        <!-- محتویات پیام اول -->
+        <div class="book-message__booking__container">
+            <div class="book__first__message__content">
+                <p class="book-text-xl">
+                    <!-- ترجمه پیام اول -->
+                    {{ translate('booking_first_message') }}
+                </p>
+            </div>
+
+            <!-- محتویات پیام آخر -->
+            <div class="book__last__message__content book-hidden">
+                <p class="book-text-xl">
+                    <!-- ترجمه پیام آخر -->
+                    {{ translate('booking_last_message') }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- دکمه‌ها -->
+    <div class="card-footer">
+        <button class="book-contract__button book-text-white book-bg-green-600">
+            {{ translate('view_booking') }}
+        </button>
+
+        <button class="book-document__contract__button book-text-white book-bg-green-600">
+            {{ translate('view_document') }}
+        </button>
+    </div>
+</div>
+
+
+</body>
+</html>
